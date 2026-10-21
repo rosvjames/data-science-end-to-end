@@ -5,13 +5,12 @@ import pandas as pd
 
 os.makedirs("figuras", exist_ok=True)
 
-# TODO: reemplaza por la ruta del archivo que tu pipeline de la Semana 7
-# deja listo para modelar (una tabla del warehouse exportada a CSV, o el
-# CSV limpio de tu etapa de calidad).
-datos = pd.read_csv("TODO_ruta_del_archivo.csv")
+# OBT.OBT_SALES del pipeline M5 (pset2), exportada de Snowflake y filtrada
+# a la tienda CA_1 (5.9 M de las 59 M filas). Grain: item x tienda x dia.
+datos = pd.read_csv("obt_sales_CA_1.csv.gz")
 
-# TODO: reemplaza por el nombre de la columna que tu modelo va a predecir.
-OBJETIVO = "TODO_columna_objetivo"
+# Unidades vendidas del item en la tienda ese dia.
+OBJETIVO = "units"
 
 # Paso 1: resumen.
 print("Filas y columnas:", datos.shape)
@@ -34,9 +33,36 @@ fuera = datos[(datos[OBJETIVO] < q1 - 1.5 * iqr) | (datos[OBJETIVO] > q3 + 1.5 *
 print(f"Atipicos de {OBJETIVO} segun IQR: {len(fuera)}")
 print(fuera.head(10))
 
-# TODO, paso 4: elige la variable de entrada que esperas que mas influya
-# en el objetivo y grafica su relacion con el (dispersion si es numerica,
-# promedio del objetivo por grupo si es categorica).
+# Paso 4: promedio de unidades por departamento (variable categorica).
+por_depto = datos.groupby("dept_id")[OBJETIVO].mean().sort_values()
+print(por_depto.round(2))
+plt.figure(figsize=(8, 5))
+por_depto.plot.barh()
+plt.title(f"{OBJETIVO} promedio por departamento")
+plt.xlabel(f"{OBJETIVO} promedio")
+plt.tight_layout()
+plt.savefig("figuras/objetivo_por_departamento.png")
+plt.close()
 
-# TODO, paso 5: agrega aqui las consultas que necesites para confirmar
-# cada uno de tus 3 hallazgos (un filtro, un groupby, una correlacion).
+# Paso 5: consultas que confirman los hallazgos.
+
+# Hallazgo 1: filas antes del lanzamiento del item (units 0 y sin precio).
+pre = datos.query("is_pre_launch")
+print(f"Filas pre-lanzamiento: {len(pre)} ({len(pre) / len(datos):.1%})")
+print(pre[[OBJETIVO, "sell_price"]].describe().round(2))
+print(f"Ceros de {OBJETIVO}: {(datos[OBJETIVO] == 0).mean():.1%} del total, "
+      f"{(datos.query('not is_pre_launch')[OBJETIVO] == 0).mean():.1%} sin pre-lanzamiento")
+
+# Hallazgo 2: ceros que no son falta de demanda (quiebre de stock, tienda cerrada).
+vendibles = datos.query("not is_pre_launch")
+ceros = vendibles.query(f"{OBJETIVO} == 0")
+print(f"Ceros marcados como quiebre (conservador): {ceros['is_suspected_stockout_conservative'].mean():.1%}")
+print(f"Ceros marcados como quiebre (binomial negativa): {ceros['is_suspected_stockout_nb'].mean():.1%}")
+print(vendibles.groupby("is_christmas_closed")[OBJETIVO].agg(["size", "mean"]).round(2))
+
+# Hallazgo 3: revenue se calcula con el objetivo (fuga de informacion).
+con_precio = vendibles.dropna(subset=["sell_price"])
+print(f"revenue == units * sell_price: "
+      f"{((con_precio['revenue'] - con_precio[OBJETIVO] * con_precio['sell_price']).abs() < 0.01).mean():.1%}")
+print(vendibles[[OBJETIVO, "revenue", "sell_price", "is_snap", "is_event_day", "is_weekend"]]
+      .corr()[OBJETIVO].round(3))

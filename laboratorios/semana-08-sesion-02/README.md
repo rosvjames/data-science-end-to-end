@@ -83,15 +83,15 @@ Solo o en pareja. Parte de la plantilla [`plantilla-ejercicio2/explorar_relacion
 
 **Hallazgo 1: qué muestra el gráfico de distancia contra tarifa, además de la tendencia general.**
 
-_(tu hallazgo, con el número que lo confirma)_
+Dos grupos que no siguen la recta. Hay 300 viajes con tarifa fija de 70.00, todos desde o hacia JFK Airport, sin importar la distancia (de ~13 a 45 km). También hay 25 viajes con distancia 0 que cobran entre 7.23 y 70: son errores de registro del GPS o del taxímetro.
 
 **Hallazgo 2: qué pasa con la propina según el método de pago, y si crees que describe a los pasajeros o al sistema que registra los datos.**
 
-_(tu hallazgo, con el número que lo confirma)_
+Los 888 viajes en efectivo tienen propina 0 y los 2027 con tarjeta tienen una propina promedio de 4.73 (ninguno con 0). Describe al sistema, no a los pasajeros: la propina en efectivo no se registra. Usar `propina` como variable haría que el modelo aprenda el método de pago, no el comportamiento.
 
 **Hallazgo 3: la duración tiene una correlación con la tarifa tan alta como la distancia. Si el modelo tiene que estimar la tarifa en el momento en que alguien pide el taxi, ¿puede usar la duración?**
 
-_(tu respuesta)_
+No. La duración (correlación 0.956, casi igual a la de la distancia, 0.960) solo se conoce al terminar el viaje. Usarla es fuga de información (*data leakage*): el modelo se ve bien en las pruebas y falla en producción. Lo mismo pasa con `propina` (0.63).
 
 ## Ejercicio 3: explora el dataset de tu proyecto
 
@@ -101,13 +101,17 @@ Usa el archivo que tu pipeline de la Semana 7 deja listo para modelar, y la plan
 
 Reemplaza la ruta del archivo y el nombre de la columna que tu modelo va a predecir. Corre los pasos 1 a 3.
 
-_(filas, columnas, faltantes por columna, y cuántos atípicos marcó el IQR en tu objetivo)_
+Archivo: `OBT.OBT_SALES` del pipeline M5 (Walmart), exportada de Snowflake (59.181.090 filas, sin llaves repetidas) y filtrada a la tienda CA_1 para que quepa en pandas: `plantilla-eda/obt_sales_CA_1.csv.gz` (no se sube al repo). Objetivo: `units`.
+
+- 5.918.109 filas y 40 columnas (3049 items × 1941 días).
+- Faltantes: `sell_price` y `revenue` 1.129.842 (las filas pre-lanzamiento); `date_key_ly_364` 1.109.836 (el primer año no tiene año anterior); `event_name_1` 5.436.367 y `event_name_2` 5.905.913 (son días sin evento, un nulo legítimo).
+- `units`: mediana 0, Q3 1, máximo 648. El IQR marca 839.509 atípicos (14.2 %): todo valor ≥ 3. Con Q1 = 0 y Q3 = 1 la regla no sirve; solo refleja que el objetivo es asimétrico.
 
 ### Paso 2: relaciones (10 minutos)
 
 Completa los pasos 4 y 5: la relación entre tu objetivo y la variable que esperas que más influya, y las consultas que confirman lo que encuentres.
 
-_(qué gráfico o consulta hiciste, y qué mostró)_
+Promedio de `units` por departamento (`figuras/objetivo_por_departamento.png`). FOODS_3 vende 2.50 unidades por día y item, 12 veces más que HOBBIES_2 (0.20). El departamento define el nivel de la serie, así que el modelo necesita `dept_id` (o el propio `item_id`). Las variables de calendario casi no se relacionan linealmente con `units`: `is_weekend` 0.06, `is_snap` 0.02, `is_event_day` -0.01.
 
 ### Paso 3: tres hallazgos que afectarían el modelado (10 minutos)
 
@@ -115,15 +119,15 @@ Para cada hallazgo, escribe qué encontraste, el número o el gráfico que lo co
 
 **Hallazgo 1:**
 
-_(tu hallazgo)_
+El 19.1 % de las filas (1.129.842) son días antes de que el item se lanzara: `units` siempre es 0 y `sell_price` es nulo. Son ceros falsos: suben los ceros de 55.2 % a 63.8 %. **Cambio:** quitar las filas con `is_pre_launch` antes de entrenar.
 
 **Hallazgo 2:**
 
-_(tu hallazgo)_
+No todo cero es falta de demanda. De los ceros que quedan tras quitar el pre-lanzamiento, el 26.5 % está marcado como posible quiebre de stock (`is_suspected_stockout_nb`; 9.5 % con el criterio conservador), y los 12.642 registros de Navidad (`is_christmas_closed`) tienen 0 porque la tienda cierra. **Cambio:** excluir la Navidad y quitar o ponderar a la baja los quiebres de stock, para que el modelo no aprenda a predecir 0 cuando lo que faltó fue producto. Además el objetivo es de conteo y está sesgado (mediana 0, máximo 648), así que conviene una pérdida Poisson/Tweedie o `log1p(units)` en vez de error cuadrático sobre `units`.
 
 **Hallazgo 3:**
 
-_(tu hallazgo)_
+`revenue` es exactamente `units × sell_price` (se cumple en el 100 % de las filas con precio) y tiene correlación 0.73 con el objetivo. Es fuga de información: no se conoce antes de vender. `_loaded_at` y `week_idx` son columnas de linaje del pipeline, no del negocio. **Cambio:** quitar `revenue`, `_loaded_at` y `week_idx` de las variables de entrada; `sell_price` sí se puede usar, porque se fija antes de la venta.
 
 ## Antes de la próxima sesión
 
@@ -131,4 +135,4 @@ _(tu hallazgo)_
 
 La tarifa fija de JFK y la hora del día no existen como columnas del dataset de taxis. ¿Cómo le darías esa información a un modelo?
 
-_(tu respuesta)_
+Creando columnas nuevas a partir de las que existen. Para JFK, una variable `es_jfk` (1 si `zona_origen` o `zona_destino` es JFK Airport), que le dice al modelo que ahí la tarifa es fija y no depende de la distancia. Para la hora, extraer `hora` (y el día de la semana) de `fecha_hora_inicio`.
