@@ -28,17 +28,17 @@ A partir de la lectura previa:
 
 **Según el artículo, ¿qué preguntas responde la exploración de datos antes de entrenar cualquier modelo?**
 
-_(tu respuesta)_
+Qué contienen los datos (filas, columnas, tipos), qué falta o está duplicado, cómo se distribuye cada variable, qué valores son atípicos o imposibles y cómo se relacionan las variables entre sí y con el objetivo.
 
 **El artículo distingue la exploración de una sola variable de la exploración de la relación entre dos. ¿Qué herramienta propone para cada una?**
 
-_(tu respuesta)_
+Una variable: estadística descriptiva, histograma y boxplot. Dos variables: diagrama de dispersión y matriz de correlación.
 
 ## Pregunta de apertura
 
 Entrenas un modelo que predice la tarifa de un viaje en taxi. Sin que lo sepas, 15 de los 3000 viajes tienen una tarifa de 999.99 por un error de captura. ¿Qué le pasa al modelo? ¿Lo notarías mirando solo su resultado final?
 
-_(tu respuesta)_
+El modelo se sesga: 15 valores de 999.99 suben la media de la tarifa de ~26 a 31.4 y la desviación estándar a 71, y un modelo que minimiza el error cuadrático intenta acercarse a esos puntos y empeora con los viajes normales. Mirando solo el resultado final no se nota: verías un error alto sin saber por qué. Se detecta antes, en `describe()` o en un histograma.
 
 ## Ejercicio 1: resumen, distribución y atípicos
 
@@ -46,15 +46,22 @@ Enunciado: [`starter/viajes_taxi.csv`](./starter/viajes_taxi.csv) tiene 3000 via
 
 **Respuesta 1, antes de ver la solución:** en `describe()`, ¿qué dos valores de la tabla te harían sospechar de un error sin necesidad de graficar nada?
 
-_(tu respuesta)_
+El máximo de `tarifa` (999.99, cuando el percentil 75 es 32.55) y el mínimo de `duracion_min` (-74, una duración negativa es imposible).
 
 **Respuesta 2:** la regla del IQR marca más de 300 viajes con tarifa atípica. ¿Esperas que todos sean errores? ¿Cómo lo averiguarías?
 
-_(tu respuesta)_
+No. El IQR solo dice que un valor es raro, no que sea falso. Lo averiguaría agrupando los atípicos: contando sus tarifas repetidas (`value_counts()`) y sus zonas de origen y destino. Así se ve si siguen un patrón real o son valores imposibles.
 
 **La formulación completa, tal como la resuelvo yo:**
 
-_(anota aquí el script y lo que encontró, mientras se revisa en clase)_
+Script: [`starter/EDA.py`](./starter/EDA.py) (`docker compose up --build`, figuras en `data-contenedor/`).
+
+- 3000 filas y 10 columnas, sin duplicados. Faltan 120 valores de `pasajeros` y 60 de `metodo_pago`.
+- IQR de la tarifa: límites [-13.85, 60.40] y 334 atípicos.
+  - 15 son errores de captura (`tarifa == 999.99`).
+  - 319 son reales: todos son viajes desde o hacia JFK Airport, 302 de ellos con la tarifa fija de 70.00.
+- Otros valores imposibles: 10 viajes con duración negativa y 25 con distancia 0.
+- Solo se quitan los 999.99 (quedan 2985 filas). La dispersión distancia–tarifa muestra una relación lineal hasta ~20 km, una meseta en 70 USD (JFK) y una columna de viajes con distancia 0 y tarifas de hasta 70.
 
 ## Durante el ConcepTest
 
