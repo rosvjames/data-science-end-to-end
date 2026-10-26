@@ -8,19 +8,13 @@
 
 ## Requisitos antes de esta sesión
 
-pandas ya lo tienes desde la Semana 4. Instala matplotlib:
-
-```
-pip install matplotlib
-```
-
-Verifica con:
+pandas y matplotlib ya vienen en el Codespace. En tu laptop, instálalos con `pip install -r requirements.txt` desde la raíz del repositorio. Verifica con:
 
 ```
 python3 -c "import matplotlib; print(matplotlib.__version__)"
 ```
 
-Los scripts de hoy guardan cada gráfico como imagen en una carpeta `figuras/`. También puedes correr el mismo código en un notebook de Jupyter, donde el gráfico aparece debajo de la celda.
+Los scripts de hoy guardan cada gráfico como imagen en una carpeta `figuras/`. Ábrelas desde el explorador de archivos de VS Code. También puedes correr el mismo código en un notebook de Jupyter (en el Codespace, crea un archivo `.ipynb` y elige el kernel de Python 3.11), donde el gráfico aparece debajo de la celda.
 
 ## Antes de empezar
 
@@ -42,19 +36,26 @@ El modelo se sesga: 15 valores de 999.99 suben la media de la tarifa de ~26 a 31
 
 ## Ejercicio 1: resumen, distribución y atípicos
 
-Enunciado: [`starter/viajes_taxi.csv`](./starter/viajes_taxi.csv) tiene 3000 viajes en taxi de Nueva York: fecha y hora de inicio, zona de origen y de destino, distancia, duración, pasajeros, método de pago, tarifa y propina. Primera mirada: qué contiene, cómo se distribuye la tarifa y qué valores están fuera de lo esperable.
+Archivo: [`starter/ejercicio1_explorar.py`](./starter/ejercicio1_explorar.py), sobre [`starter/viajes_taxi.csv`](./starter/viajes_taxi.csv): 3000 viajes en taxi de Nueva York, con fecha y hora de inicio, zona de origen y de destino, distancia, duración, pasajeros, método de pago, tarifa y propina. El script ya lee el archivo, arma los gráficos y los guarda en `figuras/`; faltan 4 `TODO`. Córrelo una vez antes de tocar nada:
 
-**Respuesta 1, antes de ver la solución:** en `describe()`, ¿qué dos valores de la tabla te harían sospechar de un error sin necesidad de graficar nada?
+```
+cd laboratorios/semana-08-sesion-02/starter
+python3 ejercicio1_explorar.py
+```
+
+**Respuesta 1 (TODO 1), antes de ver la solución:** en `describe()`, ¿qué dos valores de la tabla te harían sospechar de un error sin necesidad de graficar nada?
 
 El máximo de `tarifa` (999.99, cuando el percentil 75 es 32.55) y el mínimo de `duracion_min` (-74, una duración negativa es imposible).
 
-**Respuesta 2:** la regla del IQR marca más de 300 viajes con tarifa atípica. ¿Esperas que todos sean errores? ¿Cómo lo averiguarías?
+**Respuesta 2 (TODO 2):** abre `figuras/hist_tarifa.png` después del TODO 2. ¿Por qué casi todo el histograma queda comprimido a la izquierda?
+
+_(tu respuesta)_
+
+**Respuesta 3 (TODO 3 y 4):** la regla del IQR marca más de 300 viajes con tarifa atípica. ¿Esperas que todos sean errores? ¿Cómo lo averiguarías?
 
 No. El IQR solo dice que un valor es raro, no que sea falso. Lo averiguaría agrupando los atípicos: contando sus tarifas repetidas (`value_counts()`) y sus zonas de origen y destino. Así se ve si siguen un patrón real o son valores imposibles.
 
-**La formulación completa, tal como la resuelvo yo:**
-
-Script: [`starter/EDA.py`](./starter/EDA.py) (`docker compose up --build`, figuras en `data-contenedor/`).
+**Lo que confirmó la salida, TODO por TODO:**
 
 - 3000 filas y 10 columnas, sin duplicados. Faltan 120 valores de `pasajeros` y 60 de `metodo_pago`.
 - IQR de la tarifa: límites [-13.85, 60.40] y 334 atípicos.
@@ -79,7 +80,11 @@ _(tu respuesta)_
 
 ## Ejercicio 2: relaciones entre variables
 
-Solo o en pareja. Parte de la plantilla [`plantilla-ejercicio2/explorar_relaciones.py`](./plantilla-ejercicio2/explorar_relaciones.py) y córrela desde su carpeta (`cd plantilla-ejercicio2`, `python3 explorar_relaciones.py`): lee el mismo `starter/viajes_taxi.csv`. Quita solo los errores que el Ejercicio 1 ya confirmó y completa los 5 `TODO`: dispersión de distancia contra tarifa, propina por método de pago, correlaciones con la tarifa, y pasajeros vacíos o en 0.
+Solo o en pareja. Archivo: [`starter/ejercicio2_relaciones.py`](./starter/ejercicio2_relaciones.py), sobre el mismo `viajes_taxi.csv`. Quita solo los errores que el Ejercicio 1 ya confirmó y completa los 5 `TODO`: dispersión de distancia contra tarifa, propina por método de pago, correlaciones con la tarifa, y pasajeros vacíos o en 0. Al final, el script imprime una comprobación por TODO: completa los 5 hasta que todas digan `OK`.
+
+```
+python3 ejercicio2_relaciones.py
+```
 
 **Hallazgo 1: qué muestra el gráfico de distancia contra tarifa, además de la tendencia general.**
 
