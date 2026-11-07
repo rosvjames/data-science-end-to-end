@@ -2,8 +2,14 @@
 # Ejercicio 1. Corre bash comprobar.sh para revisar tu avance.
 
 # TODO 1: imagen base, con la misma version de Python del Ejercicio 1.
+FROM python:3.11-slim
 
 # TODO 2: carpeta de trabajo, dependencias y codigo, en el orden que
 # aprovecha la cache.
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
 
 # TODO 3: comando por defecto: python resumir_clientes.py
+CMD ["python", "resumir_clientes.py"]
