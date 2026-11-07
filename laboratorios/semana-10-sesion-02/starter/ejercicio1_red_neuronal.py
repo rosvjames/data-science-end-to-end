@@ -71,12 +71,12 @@ def main():
 
     # TODO 1: una red neuronal (MLPRegressor) con una capa oculta de 64
     # neuronas, hasta 1000 iteraciones y random_state=42.
-    red = evaluar("red neuronal", MLPRegressor(hidden_layer_sizes=(64,), random_state=42))
+    red = evaluar("red neuronal", MLPRegressor(hidden_layer_sizes=(64,), max_iter=1000, random_state=42))
 
     # TODO 2: parametros_red, cuantos numeros aprendio la red: la suma de los
     # tamanos (.size) de todas las matrices de coefs_ y todos los vectores
     # de intercepts_ del paso "modelo".
-    modelo_red = red.named_steps()["modelo"]
+    modelo_red = red.named_steps["modelo"]
     parametros_red = 0
 
     for interaction in modelo_red.coefs_:
@@ -88,8 +88,9 @@ def main():
     # ensamblaje, indexada por los nombres de columna que produce la
     # preparacion (get_feature_names_out), ordenada de mayor a menor.
     importancias = pd.Series(
-        
-    )
+        ensamblaje.named_steps["modelo"].feature_importances_,
+        index=ensamblaje.named_steps["preparar"].get_feature_names_out(),
+    ).sort_values(ascending=False)
 
     print()
     print(pd.DataFrame(resultados).to_string(index=False))
