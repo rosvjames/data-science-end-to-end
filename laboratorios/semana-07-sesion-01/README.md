@@ -42,12 +42,12 @@ Cada etapa debe entregar exactamente lo que la siguiente espera recibir, no una 
 Marca cada casilla solo después de correr el comando real, no antes.
 
 **Etapa 1, contenedor:**
-- [ ] `docker build -t <tu-imagen> .` termina sin error
-- [ ] `docker run` (con tu volumen si tu proyecto lee o escribe datos) produce el mismo resultado que correr el script sin Docker
+- [x] `docker build -t <tu-imagen> .` termina sin error
+- [x] `docker run` (con tu volumen si tu proyecto lee o escribe datos) produce el mismo resultado que correr el script sin Docker
 
 _Respuesta: ¿coincidió el resultado del contenedor con el resultado sin Docker? Si no, ¿qué diferencia encontraste?_
 
-_(tu respuesta)_
+Sí coincidió: la imagen `proyecto-m5` (construida con `docker build`) corrió `pipeline_proyecto.py` con los datos montados por volumen y dio las mismas formas que sin Docker: entrenamiento 4 532 151 × 32 y prueba 170 744 × 32.
 
 **Etapa 2, infraestructura:**
 - [ ] `docker compose up -d` (o `terraform apply`) levanta tu base de datos sin error
@@ -55,7 +55,7 @@ _(tu respuesta)_
 
 _Respuesta: ¿qué le pasó a tu ingesta en el primer intento de conexión, antes del reintento?_
 
-_(tu respuesta)_
+No hice esta etapa: mi proyecto no tiene una base de datos de ingesta (el dato M5 llega como un archivo), así que no hay `docker-compose.yml` ni `main.tf` en `infra/`. Está pendiente si el PSet 1 la exige.
 
 **Etapa 3, orquestación:**
 - [ ] tu flow de Kestra ejecuta sin error, con el tag de imagen actual de la Etapa 1
@@ -63,48 +63,48 @@ _(tu respuesta)_
 
 _Respuesta: si reconstruiste tu imagen de Docker después de crear el flow, ¿tuviste que actualizar algo en el flow para que usara la versión nueva?_
 
-_(tu respuesta)_
+Escribí el flow (`orquestacion/flow_proyecto.yml`) con la imagen `proyecto-m5:latest`, pero no lo ejecuté en Kestra. Si reconstruyo la imagen con el mismo tag, el flow la usa sin cambios (con `pullPolicy: NEVER` toma la imagen local); con un tag nuevo habría que actualizar `containerImage`.
 
 **Etapa 4, calidad:**
 - [ ] cada decisión de limpieza de tu notebook de diagnóstico está en tu script de limpieza, y el script corre de principio a fin con `python3`, sin abrir el notebook
-- [ ] tu script de limpieza corre sobre el archivo real acumulado por tu pipeline orquestado, no sobre el dataset de ejemplo de esa sesión
+- [x] tu script de limpieza corre sobre el archivo real acumulado por tu pipeline orquestado, no sobre el dataset de ejemplo de esa sesión
 - [ ] el archivo limpio que produce es el que vas a cargar en la Etapa 5, con el mismo nombre y ruta que usa el script de esa etapa
 
 _Respuesta: ¿cuántos duplicados o valores mal tipados encontraste esta vez, corriendo contra tu histórico ya acumulado?_
 
-_(tu respuesta)_
+Corriendo `limpiar.py` contra el histórico completo: 0 duplicados, 0 fechas con formato incorrecto, 0 unidades negativas y 0 precios inválidos. Hay 1 129 842 filas pre-lanzamiento (19.1%), que no son un error del dato y se filtran en el warehouse y el pipeline. El archivo ya estaba limpio, así que el script lo valida y deja un reporte (`reporte_calidad.csv`), sin crear una copia.
 
 **Etapa 5, warehouse:**
-- [ ] tu script de carga apunta al archivo LIMPIO (Etapa 4), no al crudo
-- [ ] la cuenta de filas en el warehouse coincide con la cuenta de filas de tu archivo limpio
+- [x] tu script de carga apunta al archivo LIMPIO (Etapa 4), no al crudo
+- [x] la cuenta de filas en el warehouse coincide con la cuenta de filas de tu archivo limpio
 
 _Respuesta: ¿coincidieron las dos cuentas? Si no, ¿en qué paso se perdieron o se duplicaron filas?_
 
-_(tu respuesta)_
+Sí coincidieron: el warehouse (`ventas_ca1`) cargó 5 918 109 filas, las mismas del archivo (3 049 productos × 1 941 días). Cargué el archivo de `data/processed/`, el mismo que valida `limpiar.py`.
 
 **Etapa 6, modelado con dbt:**
 - [ ] `dbt debug --profiles-dir .` confirma la conexión al mismo archivo `.duckdb` de la Etapa 5
-- [ ] `dbt run --profiles-dir .` y `dbt test --profiles-dir .` terminan sin error
+- [x] `dbt run --profiles-dir .` y `dbt test --profiles-dir .` terminan sin error
 
 _Respuesta: ¿qué ruta tenía tu `profiles.yml`, y era relativa a la carpeta desde donde corriste el comando?_
 
-_(tu respuesta)_
+`../m5.duckdb`, relativa a `warehouse/dbt/` (la carpeta desde donde corre dbt): el `.duckdb` queda en `warehouse/`. Corrí `dbt run` y `dbt test` y terminaron sin error (3 modelos, 3 pruebas). No corrí `dbt debug`.
 
 **Etapa 7, batch con Spark:**
-- [ ] tu job de Spark lee el mismo archivo limpio de la Etapa 4
-- [ ] el resultado agregado coincide con el que ya conocías de dbt o de pandas sobre el mismo dato
+- [x] tu job de Spark lee el mismo archivo limpio de la Etapa 4
+- [x] el resultado agregado coincide con el que ya conocías de dbt o de pandas sobre el mismo dato
 
 _Respuesta: ¿coincidió el número? Si no coincidió, ¿la diferencia viene de un archivo de entrada distinto, o de una transformación distinta?_
 
-_(tu respuesta)_
+Sí coincidió. Spark leyó las mismas 5 918 109 filas y la agregación por departamento dio exactamente lo mismo que DuckDB y dbt (FOODS_3: 3 993 834 unidades, 41.4% de ceros; HOBBIES_2: 56 505 y 84.3%).
 
 **Etapa 8, streaming (opcional):**
 - [ ] si tu proyecto justifica reaccionar en tiempo real, tu productor y consumidor corren contra el broker de Redpanda de la Semana 6, Sesión 2
-- [ ] si tu proyecto no lo justifica, escribiste por qué no (repite el criterio de la Semana 6, Sesión 2: ¿la decisión pierde valor con datos de horas de antigüedad?)
+- [x] si tu proyecto no lo justifica, escribiste por qué no (repite el criterio de la Semana 6, Sesión 2: ¿la decisión pierde valor con datos de horas de antigüedad?)
 
 _Respuesta:_
 
-_(tu respuesta)_
+Mi proyecto no justifica streaming: la decisión (reponer mañana) se toma una vez al día y las ventas llegan cerradas por día, así que un dato de hace unas horas no pierde valor. Aun así corrí un productor y un consumidor de ventas contra Redpanda (`procesamiento/productor.py` y `consumidor.py`): 6 eventos publicados y consumidos, con alerta de la venta atípica.
 
 ## Antes de la próxima sesión
 
