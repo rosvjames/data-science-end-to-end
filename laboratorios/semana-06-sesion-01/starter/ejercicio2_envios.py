@@ -21,26 +21,29 @@ envios = spark.read.csv("envios.csv", header=True, inferSchema=True)
 
 print("Paso 1: filtrar")
 # TODO 1: quedate solo con los envios en estado entregado.
-entregados = envios
+entregados = envios.filter(F.col("estado") == "entregado")
 print(f"Envios entregados: {entregados.count()}")
 
 print()
 print("Paso 2: una columna calculada")
 # TODO 2: agrega la columna costo = peso_kg * tarifa_por_kg.
-con_costo = entregados
+con_costo = entregados.withColumn("costo", F.col("peso_kg") * F.col("tarifa_por_kg"))
 con_costo.show(3)
 
 print()
 print("Paso 3: agregar por ciudad")
 # TODO 3: numero de envios (numero_envios) y costo total (costo_total)
 # por ciudad.
-resumen = con_costo
+resumen = con_costo.groupBy("ciudad").agg(
+    F.count("*").alias("numero_envios"), F.sum("costo").alias("costo_total")
+)
 resumen.show()
 
 print()
 print("Paso 4: guardar el resultado")
 # TODO 4: guarda resumen como CSV con encabezado en la carpeta
 # resumen_envios, reemplazandola si ya existe.
+resumen.write.mode("overwrite").csv("resumen_envios", header=True)
 
 print()
 print("Paso 5: el mismo total con pandas")
@@ -49,7 +52,9 @@ if "costo_total" in resumen.columns:
     total_spark = resumen.agg(F.sum("costo_total")).first()[0]
 # TODO 5: calcula con pandas, desde envios.csv, el costo total de los
 # envios entregados.
-total_pandas = None
+datos = pd.read_csv("envios.csv")
+entregados_pd = datos[datos["estado"] == "entregado"]
+total_pandas = float((entregados_pd["peso_kg"] * entregados_pd["tarifa_por_kg"]).sum())
 print(f"Total con Spark: {total_spark} | total con pandas: {total_pandas}")
 
 

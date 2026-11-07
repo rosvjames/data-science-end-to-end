@@ -22,26 +22,31 @@ print(f"Particiones de lectura: {ventas.rdd.getNumPartitions()}")
 
 print("Paso 1: filtrar")
 # TODO 1: quedate solo con las ventas de la categoria electronica.
-electronica = ventas
+electronica = ventas.filter(F.col("categoria") == "electronica")
 print(f"Ventas de electronica: {electronica.count()}")
 
 print()
 print("Paso 2: una columna calculada")
 # TODO 2: agrega la columna monto = cantidad * precio_unitario.
-con_monto = ventas
+con_monto = ventas.withColumn("monto", F.col("cantidad") * F.col("precio_unitario"))
 con_monto.show(3)
 
 print()
 print("Paso 3: agregar por categoria")
 # TODO 3: numero de ventas y monto total por categoria, del monto mas
 # alto al mas bajo.
-resumen = con_monto
+resumen = (
+    con_monto.groupBy("categoria")
+    .agg(F.count("*").alias("numero_ventas"), F.sum("monto").alias("monto_total"))
+    .orderBy(F.desc("monto_total"))
+)
 resumen.show()
 
 print()
 print("Paso 4: guardar el resultado")
 # TODO 4: guarda resumen como CSV con encabezado en la carpeta
 # resumen_por_categoria, reemplazandola si ya existe.
+resumen.write.mode("overwrite").csv("resumen_por_categoria", header=True)
 
 if os.path.exists("resumen_por_categoria"):
     print("Contenido de resumen_por_categoria/:", sorted(os.listdir("resumen_por_categoria")))
