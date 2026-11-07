@@ -8,5 +8,9 @@ models:
           - unique
           - not_null
 
-  # TODO 2: agrega stg_pedidos, con las pruebas unique y not_null sobre
-  # la columna que identifica cada pedido.
+  - name: stg_pedidos
+    columns:
+      - name: id_pedido
+        tests:
+          - unique
+          - not_null

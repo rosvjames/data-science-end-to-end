@@ -1,5 +1,9 @@
--- TODO 1: lista las columnas de raw_ventas que el resto del proyecto usa.
--- TODO 5: cuando la prueba unique de id_venta falle, corrige aqui la
--- causa, sin tocar raw_ventas ni ventas.csv.
-select *
+-- Lista las columnas que el resto del proyecto usa. id_venta 4 viene
+-- repetido en raw_ventas (fila identica): distinct corrige la causa aqui,
+-- sin tocar raw_ventas ni ventas.csv.
+select distinct
+    id_venta,
+    id_producto,
+    fecha,
+    unidades
 from raw_ventas
