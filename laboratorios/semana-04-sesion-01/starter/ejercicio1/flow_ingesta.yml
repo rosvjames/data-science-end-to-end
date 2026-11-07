@@ -13,9 +13,18 @@ tasks:
       enabled: true
     # TODO 1: la fuente falla la mitad de las veces. Agrega un retry de
     # hasta 3 intentos, con 10 segundos entre cada uno.
+    retry:
+      type: constant
+      maxAttempts: 3
+      interval: PT10S
     commands:
       # TODO 2: antes del script, deja en el log para que fecha corre esta
       # ejecucion, sea programada o manual.
+      - echo "Ingesta para la fecha {{ trigger.date ?? execution.startDate }}"
       - python ingesta_inestable.py
 
 # TODO 3: que corra solo todos los dias a las 6 de la manana.
+triggers:
+  - id: diario_6am
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 6 * * *"

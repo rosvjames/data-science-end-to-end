@@ -4,8 +4,8 @@
 #     python3 comprobar.py
 
 # TODO 1: id ingesta_clima, namespace proyecto.clima.
-id: TODO
-namespace: TODO
+id: ingesta_clima
+namespace: proyecto.clima
 
 tasks:
   - id: registrar_clima
@@ -15,9 +15,17 @@ tasks:
       enabled: true
     # TODO 2: la estacion falla 3 de cada 10 veces. Hasta 4 intentos,
     # con 5 segundos entre cada uno.
+    retry:
+      type: constant
+      maxAttempts: 4
+      interval: PT5S
     commands:
       # TODO 3: pasale a ingesta_clima.py la fecha de la ejecucion como
       # argumento, en vez de solo imprimirla.
-      - python ingesta_clima.py
+      - python ingesta_clima.py "{{ (trigger.date ?? execution.startDate) | date('yyyy-MM-dd') }}"
 
 # TODO 4: que corra solo todos los lunes a las 7 de la manana.
+triggers:
+  - id: lunes_7am
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 7 * * 1"
