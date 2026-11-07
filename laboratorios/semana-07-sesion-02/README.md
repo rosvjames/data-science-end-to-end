@@ -16,27 +16,27 @@ Si una categoría ya te quedó completamente clara, escribe "sin pregunta" y seg
 
 **Formulación de problemas (Semanas 1-2):**
 
-_(tu pregunta, o "sin pregunta")_
+¿Cómo defino el costo de subestimar frente a sobreestimar la demanda, si no tengo los márgenes ni la merma reales de la tienda?
 
 **Contenedores e infraestructura como código (Semana 3):**
 
-_(tu pregunta, o "sin pregunta")_
+Con un archivo de 150 MB, ¿conviene montarlo por volumen o incluirlo en la imagen? (Usé volumen: la imagen queda chica y los datos no se versionan.)
 
 **Orquestación y calidad de datos (Semana 4):**
 
-_(tu pregunta, o "sin pregunta")_
+¿Cómo hace Kestra para usar una imagen local, sin registro, y mantener su tag actualizado cuando la reconstruyo?
 
 **Warehouse y modelado analítico (Semana 5):**
 
-_(tu pregunta, o "sin pregunta")_
+En dbt, `unique` solo mira una columna: para una clave compuesta (producto y día), ¿es mejor una clave sintética en staging o una prueba de combinación única?
 
 **Procesamiento batch y streaming (Semana 6):**
 
-_(tu pregunta, o "sin pregunta")_
+Si DuckDB resolvió la misma agregación sobre 5.9 millones de filas en segundos, ¿cuándo se justifica de verdad Spark?
 
 **Integración de principio a fin (Semana 7, Sesión 1):**
 
-_(tu pregunta, o "sin pregunta")_
+¿Cómo verifico que cada etapa lee exactamente lo que produjo la anterior, y cómo corro todo encadenado sin ejecutar etapa por etapa a mano?
 
 ## Durante el turno de preguntas
 
@@ -48,11 +48,11 @@ _(tu respuesta)_
 
 **Antes de la discusión, a partir de la lectura:** según el artículo de IBM, ¿qué distingue a un contrato de datos de la documentación tradicional de un esquema?
 
-_(tu respuesta)_
+Un contrato de datos es un acuerdo formal y verificable entre quien produce los datos y quien los consume: define esquema, significado de las columnas, calidad esperada, frescura y responsables, y se puede hacer cumplir. La documentación de un esquema solo describe cómo son los datos hoy, y nada obliga a mantenerla o a respetarla. _(general, sin leer el artículo)_
 
 **Pregunta de la discusión:** ¿qué garantiza un contrato de datos entre el equipo que produce y el equipo que consume un pipeline, que una prueba de dbt corriendo en silencio no garantiza por sí sola?
 
-_(tu respuesta, antes de la discusión en clase)_
+Garantiza un compromiso entre las dos partes: qué significa cada columna, cada cuánto llega, qué cambios se avisan antes (versionado) y quién responde. Una prueba de dbt en silencio solo detecta, del lado del consumidor, que algo se rompió, y después: no previene el cambio, no dice qué significaba el dato ni quién debe arreglarlo.
 
 **Después de la discusión, ¿qué agregarías o cambiarías de tu respuesta?**
 
@@ -60,7 +60,7 @@ _(tu respuesta)_
 
 **Aplicado a tu propio proyecto:** de las pruebas `unique`/`not_null` que ya escribiste en el `schema.yml` de dbt (Semana 5, Sesión 2), elige una columna de tu warehouse cuyo significado exacto no queda claro solo con el nombre de la columna (¿una fecha en qué huso horario? ¿un monto con o sin impuesto?). Escribe, en una frase, la aclaración que le harías a alguien que fuera a consumir esa tabla sin haber visto tu código.
 
-_(tu respuesta)_
+En `ventas_ca1`, la columna `units` (unidades vendidas del producto en la tienda ese día): un 0 no siempre significa "no hubo demanda"; puede ser un quiebre de stock (entre 9.5% y 26.5% de los ceros, según el criterio), y las filas anteriores al lanzamiento del producto también tienen 0 sin que el producto existiera (`is_pre_launch`).
 
 ## Antes de la próxima sesión
 
