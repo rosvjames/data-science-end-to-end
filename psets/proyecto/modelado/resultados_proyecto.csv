@@ -1,0 +1,8 @@
+modelo,mae_entrenamiento,mae_prueba,brecha,segundos
+linea base: mediana constante,1.6441,1.5344,-0.1097,0.15
+linea base: media de 28 dias,1.1793,1.1082,-0.0711,0.0
+ridge alpha=1,1.1921,1.119,-0.0731,0.18
+ridge alpha=1000,1.1915,1.1189,-0.0726,0.18
+bosque sin limite,0.4529,1.163,0.71,10.04
+bosque min_samples_leaf=50,1.1233,1.0907,-0.0326,6.45
+gradient boosting,1.147,1.0895,-0.0575,15.23

@@ -1,0 +1,5 @@
+esquema,modelo,mae_promedio,mae_desviacion,costo_promedio,costo_desviacion,mae_pliegue_1,mae_pliegue_2,mae_pliegue_3,mae_pliegue_4,mae_pliegue_5
+temporal,gradient boosting (final),1.0138,0.0249,1.5224,0.0384,1.0539,1.0011,1.0155,0.9781,1.0201
+temporal,red neuronal (segundo),1.0672,0.043,1.6779,0.1221,1.1203,1.0631,1.1082,1.0037,1.0404
+al azar,gradient boosting (final),1.0192,0.0091,1.5287,0.0181,1.0085,1.018,1.0361,1.0155,1.0178
+al azar,red neuronal (segundo),1.041,0.0132,1.5633,0.0145,1.0188,1.0588,1.0365,1.044,1.0469
