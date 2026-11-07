@@ -131,7 +131,7 @@ El archivo [`.github/workflows/pruebas.yml`](../../.github/workflows/pruebas.yml
 
 **Pega el enlace a la ejecución de GitHub Actions donde pasan tus pruebas:**
 
-_(tu respuesta)_
+https://github.com/rosvjames/data-science-end-to-end/actions/runs/42418259773 (ejecución `pruebas #1`, commit `3258d5d`, con marca verde: pasan las 14 pruebas de `psets/proyecto`).
 
 **¿Qué patrón elegiste para tu proyecto, y qué número de latencia lo decide?**
 
