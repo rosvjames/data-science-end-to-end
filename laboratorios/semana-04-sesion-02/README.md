@@ -18,17 +18,17 @@ A partir de la lectura previa:
 
 **Según el artículo, ¿por qué un modelo puede entrenar sin ningún error y producir métricas razonables, aunque los datos de entrada tengan problemas serios de calidad?**
 
-_(tu respuesta)_
+Porque el modelo solo ve números: no avisa si hay duplicados, faltantes o mezclas de formato; aprende con lo que recibe y las métricas se calculan sobre los mismos datos con problemas. _(general, sin leer el artículo)_
 
 **El artículo distingue varias dimensiones de calidad de datos. ¿Cuál te parece más difícil de detectar solo con un vistazo rápido al dataset, sin código?**
 
-_(tu respuesta)_
+Los formatos mezclados y los marcadores disfrazados de texto (`N/D`, `-`): a simple vista se ven como valores normales y `isna()` no los detecta. _(general, sin leer el artículo)_
 
 ## Pregunta de apertura
 
 Tu modelo entrena sin ningún error, y las métricas se ven razonables. ¿Eso significa que los datos de entrada estaban bien?
 
-_(tu respuesta)_
+No: que el modelo entrene y las métricas se vean razonables no prueba que los datos estén bien; los errores de calidad (duplicados, faltantes, formatos, fuga) no detienen el entrenamiento.
 
 ## Ejercicio 1: diagnóstico completo de un archivo de sensores
 
@@ -36,19 +36,19 @@ Notebook: [`starter/ejercicio1_diagnostico.ipynb`](./starter/ejercicio1_diagnost
 
 **Respuesta 1 (TODO 1), antes de ver la solución:** sin el TODO 1, el notebook dice que quedan 10 filas. Mirando el CSV, ¿cuántas esperas que queden después de quitar las filas repetidas, y con qué método de pandas las contarías antes de quitarlas?
 
-_(tu respuesta)_
+Esperaría 8 filas (10 menos 2 repetidas): `datos.duplicated().sum()` cuenta las filas que repiten todas sus columnas antes de quitarlas con `drop_duplicates()`.
 
 **Respuesta 2 (TODO 2 y 3):** `isna()` va a contar 1 temperatura faltante. ¿Cuántas esperas después de convertir `temperatura` a número con `errors="coerce"`, y de dónde sale la diferencia?
 
-_(tu respuesta)_
+Esperaba 2: la temperatura de S5 que ya está vacía, y la de S3, que dice `"N/D"` (texto), no es número y con `errors="coerce"` pasa a faltante. La diferencia sale de ese marcador disfrazado, que `isna()` no detecta.
 
 **Respuesta 3 (TODO 4):** sin el TODO 4, el notebook convierte las fechas con `pd.to_datetime` sin indicar formato. ¿Qué fecha le asignó a S3 (`01/02/2026`) y a S8 (`03/02/2026`)? ¿Apareció algún error?
 
-_(tu respuesta)_
+Sin formato, `pd.to_datetime` lee `01/02/2026` como mes/día: 2 de enero de 2026 para S3, y `03/02/2026` como 2 de marzo para S8 (cuando en realidad son 1 y 3 de febrero). No dio ningún error: es un fallo silencioso.
 
 **Lo que confirmó la salida, TODO por TODO:**
 
-_(anota los números que no esperabas)_
+Duplicados: 2 (quedan 8 filas). Faltantes: 1 visible; tras `errors="coerce"` son 2 (el `N/D` se suma). Fechas: con formato explícito (`%d/%m/%Y` si tiene `/`, si no `%Y-%m-%d`) S3 queda en 2026-02-01 y S8 en 2026-02-03. Lo que no esperaba: que el error de fechas sea silencioso.
 
 ## Durante el ConcepTest
 
@@ -70,15 +70,15 @@ Solo o en pareja. Notebook: [`starter/ejercicio2_pedidos.ipynb`](./starter/ejerc
 
 **Respuesta 1:** la columna `monto` usa dos marcadores distintos para un dato que no existe. ¿Cuáles son, y cuántos de ellos contó `isna()` antes de convertir?
 
-_(tu respuesta)_
+`"sin dato"` y `"-"`. `isna()` contó 0 en `monto`: ambos son texto, no valores nulos de pandas; solo aparecen como faltantes después de convertir con `errors="coerce"` (2).
 
 **Respuesta 2:** después de quitar los duplicados, el TODO 5 encuentra un `pedido_id` que todavía aparece dos veces. ¿Por qué `duplicated()` no lo marcó? ¿Qué necesitarías saber del negocio para decidir cuál de las dos filas conservar?
 
-_(tu respuesta)_
+Porque `duplicated()` solo marca filas que repiten *todas* las columnas: P07 aparece dos veces con `monto` distinto (18.40 y 19.40). Para decidir cuál conservar habría que saber cuál es la correcta del negocio (la más reciente, una corrección, o un error de captura) y de dónde viene cada fila.
 
 **Si terminas antes:** `cantidad` también tiene faltantes, pero `dtypes` la muestra como `float64` aunque todas sus cantidades son enteras. ¿Por qué?
 
-_(tu respuesta)_
+Porque en pandas un entero normal no admite faltantes (NaN es un float): al haber valores faltantes, la columna pasa a `float64`. Se podría usar el tipo `Int64`, que sí admite faltantes.
 
 ## Ejercicio 3: diagnóstico del dataset de tu proyecto
 
@@ -100,7 +100,7 @@ Responde las preguntas de cada sección del notebook. Para cada problema encontr
 
 **Ruta de tu notebook de diagnóstico en tu fork:**
 
-_(tu respuesta)_
+`psets/proyecto/calidad/diagnostico_proyecto.ipynb`.
 
 ## Antes de la próxima sesión
 
@@ -108,4 +108,4 @@ Ya diagnosticaste los problemas de calidad de tu dataset.
 
 Pregunta: ¿cómo decides, con evidencia y no solo con intuición, qué variables de ese dataset ayudan a predecir lo que tu proyecto necesita predecir, y cuáles solo parecen ayudar?
 
-_(tu respuesta)_
+Con evidencia: medir la relación de cada variable con el objetivo (correlación, información mutua), comparar el modelo con y sin ella en validación (y con la importancia por permutación) y descartar las que solo parecen ayudar por fuga de información (como `revenue`, que se calcula con el objetivo).
