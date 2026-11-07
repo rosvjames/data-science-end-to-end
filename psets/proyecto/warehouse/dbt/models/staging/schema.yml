@@ -1,0 +1,12 @@
+version: 2
+
+models:
+  - name: stg_ventas_ca1
+    columns:
+      - name: clave_item_dia
+        tests:
+          - unique
+          - not_null
+      - name: units
+        tests:
+          - not_null

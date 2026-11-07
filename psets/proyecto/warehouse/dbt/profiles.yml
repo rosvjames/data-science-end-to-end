@@ -1,0 +1,7 @@
+# dbt corre desde warehouse/dbt/ y el .duckdb queda en warehouse/.
+proyecto_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ../m5.duckdb

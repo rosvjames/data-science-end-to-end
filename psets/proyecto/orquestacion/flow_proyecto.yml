@@ -1,0 +1,29 @@
+# Flow del proyecto M5: corre la imagen proyecto-m5 (Semana 3, Sesion 1), que
+# ejecuta el pipeline de preparacion de modelado/. La imagen no trae los datos:
+# hay que montar psets/proyecto/data en /app/data (ruta de tu maquina en `volumes`).
+id: preparacion_m5
+namespace: proyecto.m5
+
+tasks:
+  - id: preparar_datos
+    type: io.kestra.plugin.scripts.shell.Commands
+    containerImage: proyecto-m5:latest
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+      pullPolicy: NEVER
+      # volumes:
+      #   - /RUTA/A/psets/proyecto/data:/app/data
+    # La fuente es un archivo local, no una API: un reintento basta.
+    retry:
+      type: constant
+      maxAttempts: 2
+      interval: PT30S
+    commands:
+      - echo "Procesando datos para {{ trigger.date ?? execution.startDate }}"
+      - cd /app/modelado && python pipeline_proyecto.py
+
+# Las ventas de M5 son diarias y el modelo predice el dia siguiente: una vez por noche.
+triggers:
+  - id: diario_5am
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 5 * * *"
