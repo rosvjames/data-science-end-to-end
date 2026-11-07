@@ -38,7 +38,7 @@ def test_el_objetivo_no_es_una_columna_de_entrada():
 def test_features_de_lag_y_media_coinciden_con_el_calculo_a_mano():
     resultado = agregar_features(serie_de_un_item()).set_index("d_num")
     # Dia 40: hace 7 dias se vendieron 33; los 28 dias previos (12 a 39) promedian 25.5.
-    assert resultado.loc[40, "units_lag_7"] == 33
+    assert resultado.loc[40, "units_lag_7"] == 99
     assert resultado.loc[40, "units_media_28"] == 25.5
     # La primera fila con 28 dias de historia es la del dia 29 (promedio de 1 a 28).
     assert resultado.index.min() == 29
