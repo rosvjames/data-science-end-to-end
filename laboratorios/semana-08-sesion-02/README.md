@@ -44,7 +44,7 @@ El máximo de `tarifa` (999.99, cuando el percentil 75 es 32.55) y el mínimo de
 
 **Respuesta 2 (TODO 2):** mira el histograma después del TODO 2. ¿Por qué casi todo el histograma queda comprimido a la izquierda?
 
-_(tu respuesta)_
+Porque los 15 errores de 999.99 estiran el eje horizontal hasta casi 1000, mientras que casi todos los viajes cuestan entre 5 y 70: las 50 barras se reparten en ese rango tan ancho y las tarifas normales caen todas en las primeras barras.
 
 **Respuesta 3 (TODO 3 y 4):** la regla del IQR marca más de 300 viajes con tarifa atípica. ¿Esperas que todos sean errores? ¿Cómo lo averiguarías?
 
@@ -115,7 +115,7 @@ En el paso 5 del notebook, para cada hallazgo: una celda de código con el núme
 
 **Ruta de tu notebook de exploración en tu fork:**
 
-_(tu respuesta)_
+`psets/proyecto/modelado/explorar_proyecto.ipynb`.
 
 **Hallazgo 1:**
 
