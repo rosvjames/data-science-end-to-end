@@ -22,11 +22,11 @@ A partir de la lectura previa:
 
 **El artículo da un ejemplo: agregar una base de datos nueva por el método manual puede requerir un ticket al equipo de infraestructura y días de espera. ¿Qué reemplaza ese ticket y esa espera con infraestructura como código?**
 
-_(tu respuesta)_
+El archivo de configuración, que un comando aplica en minutos: el ticket y los días de espera pasan a ser un cambio de código que se revisa y se ejecuta, igual cada vez. _(general, sin leer el artículo)_
 
 **Docker Compose ya describe el resultado final deseado en un archivo YAML declarativo. ¿Alcanza eso para llamarlo infraestructura como código completa, o falta algo? Anota tu intuición, la retomamos formalmente más adelante en la guía.**
 
-_(tu respuesta)_
+Falta algo: Compose describe el resultado deseado, pero solo para contenedores de una máquina. La infraestructura como código completa también guarda un estado, calcula un plan de cambios y cubre recursos de nube, redes y permisos (eso agrega Terraform).
 
 ## Paso 1: Postgres y pgAdmin con Docker Compose
 
@@ -63,11 +63,11 @@ pgAdmin queda en el puerto 8085, no en el 8080: ese puerto lo usa Kestra desde l
 
 **Respuesta 1, antes de correr `docker compose up`:** si quitáramos el bloque `volumes` de `pg-database` y detuviéramos los contenedores, ¿qué pasaría con los datos que hayamos cargado?
 
-_(tu respuesta)_
+Se perderían: sin volumen, los datos viven dentro del contenedor y se borran con él. Con el volumen `datos_postgres` sobreviven.
 
 **Respuesta 2:** dentro de pgAdmin, para conectarte a la base de datos, ¿qué valor va en el campo "Host": `localhost` o el nombre del servicio `pg-database`?
 
-_(tu respuesta)_
+El nombre del servicio, `pg-database`: pgAdmin corre en otro contenedor, y para él `localhost` es él mismo. Compose pone a los servicios en la misma red y los resuelve por nombre.
 
 Levanta los dos servicios:
 
@@ -99,7 +99,7 @@ Agrega el tercer servicio al archivo:
 
 **Respuesta, antes de correr nada:** `depends_on` hace que Docker Compose arranque `pg-database` antes que `ingesta`. ¿Eso garantiza que Postgres ya acepta conexiones en el momento exacto en que el script de ingesta intenta conectarse? Anota tu intuición, la respuesta llega en clase antes de correr el comando.
 
-_(tu respuesta)_
+No: `depends_on` solo espera a que el contenedor arranque, no a que Postgres acepte conexiones. Por eso el script reintenta la conexión.
 
 Corre:
 
@@ -113,7 +113,7 @@ Sigue los logs del contenedor `ingesta`: si Postgres todavía no está listo, re
 SELECT mes_origen, COUNT(*) FROM viajes_taxi GROUP BY mes_origen ORDER BY mes_origen;
 ```
 
-_(cuántas filas viste por mes)_
+No lo corrí (descarga datos de la TLC y levanta Postgres y pgAdmin). Según el script, deberían ser 300 000 filas por mes, enero a marzo de 2023.
 
 ## Durante el ConcepTest
 
@@ -261,7 +261,7 @@ terraform apply
 
 Revisa `terraform plan` antes de confirmar el `apply`: ¿coincide con lo que esperabas crear? `docker compose down -v` borró el volumen de Compose, así que Terraform parte con un volumen nuevo y vacío, y su contenedor de ingesta vuelve a cargar los tres meses. Cuando termine (`docker logs -f ingesta`), verifica en pgAdmin (regístrala de nuevo si hace falta) que están los 900.000 viajes, esta vez en la infraestructura que levantó Terraform. Después corre `terraform plan` otra vez: con todo ya creado, ¿qué esperas que diga?
 
-_(qué mostró tu `terraform plan`, y qué verificaste en pgAdmin)_
+No lo corrí. Esperaba que `terraform plan` dijera "No changes. Your infrastructure matches the configuration": el estado y la realidad ya coinciden.
 
 Al final de la sesión, para no dejar contenedores corriendo:
 
@@ -275,4 +275,4 @@ Ya tienes la infraestructura de datos levantada y el pipeline de ingesta corrien
 
 Pregunta: ¿cómo te aseguras de que ese pipeline corra solo, todos los días, sin que alguien tenga que acordarse de correrlo a mano?
 
-_(tu respuesta)_
+Un orquestador (Kestra, la herramienta de la siguiente sesión) que lance el pipeline con un horario, reintente si falla y deje registro de cada ejecución.
