@@ -139,7 +139,7 @@ Por lotes, una vez por noche. El número que lo decide es la latencia que tolera
 
 **Rompe a propósito una de tus pruebas (cambia un valor esperado), haz push y mira qué pasa en GitHub. Después arréglala. ¿Qué te dijo GitHub, y dónde lo viste?**
 
-_(tu respuesta)_
+Cambié en `test_pipeline_proyecto.py` el valor esperado de `units_lag_7` de 33 a 99 y subí el commit. GitHub corrió las pruebas y marcó la ejecución como fallida (cruz roja) en la pestaña **Actions**: https://github.com/rosvjames/data-science-end-to-end/actions/runs/42418705616. Dentro de la ejecución, en el paso "Correr las pruebas de psets/proyecto", el log de `pytest` mostró `FAILED ...::test_features_de_lag_y_media_coinciden_con_el_calculo_a_mano - assert 33.0 == 99` y el resumen `1 failed, 13 passed`: dijo qué prueba falló, en qué línea, y cuál era el valor real (33.0) frente al esperado (99), mientras las otras 13 pasaban. Después restauré el 33, hice push y GitHub volvió a marcarlo en verde: https://github.com/rosvjames/data-science-end-to-end/actions/runs/42418813227.
 
 ## Antes de la próxima sesión
 
