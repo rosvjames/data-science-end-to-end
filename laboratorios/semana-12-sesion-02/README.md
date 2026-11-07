@@ -26,7 +26,7 @@ _(tu respuesta)_
 
 La sesión pasada, la app leía las tarifas de una tabla calculada de noche. Cuando un pasajero escribe un destino que no estaba reservado, no hay ninguna fila que leer. ¿Qué tendría que existir para que la app le pregunte al modelo en ese momento, y qué le mandaría?
 
-_(tu respuesta)_
+Tendría que existir un servicio en línea (una API) con el modelo ya cargado, siempre disponible, al que la app le envíe una petición por viaje. Le mandaría lo que la app conoce en ese momento: fecha y hora, zona de origen y destino, distancia, pasajeros y método de pago. El servicio calcularía las demás features igual que en el entrenamiento y respondería con la tarifa estimada. _(Razonamiento propio; no pude leer el artículo.)_
 
 ## Ejercicio 1: la tarifa, como servicio
 
@@ -48,27 +48,27 @@ curl -X POST localhost:8000/predecir -H "Content-Type: application/json" -d '{"f
 
 **Respuesta 1 (antes de los TODO):** sin resolver, `/salud` dice que el modelo está cargado, `/predecir` responde 200 y `pytest` dice `3 passed`. ¿Qué de esa salida debería preocuparte?
 
-_(tu respuesta)_
+Que todo "funciona" sin haber implementado nada: `/predecir` responde 200 con una tarifa que no viene del modelo (siempre 0.0) y las 3 pruebas pasan porque, como en la sesión pasada, las pruebas sin `assert` no comprueban nada. El código 200 y las pruebas en verde no prueban que la respuesta sea correcta; hay que revisar el contenido de la respuesta.
 
 **Respuesta 2 (TODO 1):** con el esquema completo, ¿qué esperas que responda el servicio a un viaje sin `distancia_km`? ¿Y a uno sin `zona_origen`?
 
-_(tu respuesta)_
+A un viaje sin `distancia_km` esperaba una respuesta normal (200): es opcional (valor por defecto `None`) y la preparación del pipeline la imputa con la mediana; en la práctica respondió 200 con 68.56 frente a 70.39 con distancia. A un viaje sin `zona_origen`, un error 422 (campo obligatorio faltante), sin llegar al modelo.
 
 **Respuesta 3 (TODO 2):** el modelo se entrenó con `hora_sin`, `hora_cos` y `es_hora_pico`, pero la app manda solo la fecha y hora. ¿Qué pasaría si el servicio calculara `es_hora_pico` con otras horas que las del entrenamiento?
 
-_(tu respuesta)_
+El modelo recibiría valores de `es_hora_pico` con otro significado que los que aprendió: se equivocaría sin dar ningún error ni advertencia, porque la columna seguiría siendo un 0 o un 1 válido. Por eso el servicio importa `agregar_features` de `features_taxis.py`, el mismo código con el que se construyeron las features de entrenamiento, y no vuelve a escribirlas.
 
 **Respuesta 4 (TODO 3 y 4):** el código 422 del viaje sin zona de origen, ¿lo produce tu código o FastAPI? ¿La petición llega al modelo?
 
-_(tu respuesta)_
+Lo produce FastAPI (con pydantic), antes de ejecutar mi función: al faltar `zona_origen`, un campo obligatorio de `Viaje`, rechaza la petición con 422 y un mensaje que dice qué campo falta. La petición no llega al modelo ni a `predecir`.
 
 **Respuesta 5 (TODO 5):** construye y corre la imagen con el `CMD` sin resolver (`docker build -t servicio-tarifa .` y `docker run -p 8000:8000 servicio-tarifa`). El log dice que uvicorn está corriendo, pero `curl localhost:8000/salud` falla. ¿Por qué?
 
-_(tu respuesta)_
+Porque uvicorn, sin `--host`, escucha en 127.0.0.1, es decir, solo dentro del contenedor. El log dice que está corriendo, pero el puerto publicado (`-p 8000:8000`) reenvía el tráfico a la interfaz externa del contenedor, donde no hay nadie escuchando, así que la conexión desde fuera falla. Con `--host 0.0.0.0` escucha en todas las interfaces. (Esta respuesta es de conocimiento general; sí construí y corrí la imagen con el `CMD` corregido: `/salud` y `/predecir` respondieron desde fuera del contenedor.)
 
 **Lo que respondió el servicio:**
 
-_(anota la tarifa del viaje de Midtown al aeropuerto, y la respuesta completa al viaje sin zona de origen)_
+Viaje de Midtown a JFK Airport (26.4 km, 2 pasajeros, tarjeta, 2026-11-05 08:30): `{"tarifa_estimada": 70.39}`. Viaje sin zona de origen: código 422 con `{"detail": [{"type": "missing", "loc": ["body", "zona_origen"], "msg": "Field required", ...}]}`.
 
 ## Durante el ConcepTest
 
@@ -90,19 +90,19 @@ Solo o en pareja. Carpeta: [`starter/ejercicio2/`](./starter/ejercicio2/). La se
 
 **Respuesta 1:** levanta el servicio y evalúa dos pagos: uno de madrugada, por app, con tarjeta nueva, dos intentos fallidos y ningún viaje previo; otro de la tarde, con tarjeta conocida y 22 viajes previos. ¿Qué probabilidad y qué decisión recibió cada uno?
 
-_(tu respuesta)_
+El pago de madrugada (por app, tarjeta nueva, dos intentos fallidos, sin viajes previos): probabilidad 0.9996, decisión `revisar: true`. El pago de la tarde (tarjeta conocida, 22 viajes previos): probabilidad 0.0159, `revisar: false`. (Probado con la API en la misma máquina.)
 
 **Respuesta 2:** el servicio devuelve la decisión (`revisar`) además de la probabilidad. ¿Qué gana la app con eso? ¿Qué tendría que cambiar si la empresa decide mañana que el umbral es 0.20?
 
-_(tu respuesta)_
+La app no tiene que saber el umbral ni compararlo: la regla de negocio vive en un solo lugar y la app solo actúa sobre `revisar`. Si el umbral pasa a 0.20, se cambia `UMBRAL` en el servicio y se vuelve a construir y desplegar la imagen; las aplicaciones que lo usan no cambian, mientras que si cada una comparara la probabilidad con su propio umbral, habría que actualizar todas.
 
 **Respuesta 3:** el mismo pago, evaluado por este servicio y por el lote de la sesión pasada, ¿da la misma probabilidad? ¿Qué tiene que ser igual en los dos para que así sea?
 
-_(tu respuesta)_
+Sí, debe dar la misma. Lo comprobé con tres pagos de `pagos_taxi.csv`: 0.0782, 0.0598 y 0.9053 por las dos vías. Tiene que ser igual: el archivo del modelo (la misma versión entrenada), las features (`agregar_features` y `preparacion` de `preparacion_pagos.py`, con las mismas columnas en el mismo orden) y las versiones de las librerías con las que se guardó y se carga el modelo.
 
 **Si terminas antes:** manda a `/evaluar_pago` un pago con `"monto": "cuarenta"`. ¿Qué responde el servicio, y qué línea de `servicio_fraude.py` produce esa respuesta?
 
-_(tu respuesta)_
+Responde 422 con `{"detail": [{"type": "float_parsing", "loc": ["body", "monto"], "msg": "Input should be a valid number, unable to parse string as a number", "input": "cuarenta"}]}`. Lo produce la línea `monto: float` de la clase `Pago` en `servicio_fraude.py`: pydantic valida los tipos antes de que corra `evaluar_pago`.
 
 ## Ejercicio 3: el servicio de tu proyecto
 
@@ -126,11 +126,17 @@ En `proyecto/README.md`, agrega la sección **Cómo correr el servicio**: cómo 
 
 **¿Qué datos recibe tu servicio, y cuáles de tus features calcula él mismo? ¿Cómo sabes que las calcula igual que en el entrenamiento?**
 
-_(tu respuesta)_
+Recibe el departamento del producto, la fecha a predecir, el precio vigente, si es día SNAP o de evento, y las ventas diarias recientes del producto (mínimo 28 días, hasta el día anterior). Calcula él mismo `units_lag_7` y `units_media_28` (con `agregar_features`, importada de `modelado/pipeline_proyecto.py`) y el calendario (`wday`, `month`, `is_weekend`, con `features_de_calendario`, de la misma ruta). Sé que las calcula igual que en el entrenamiento porque no hay una segunda copia del cálculo: el servicio llama a las mismas funciones que el pipeline de entrenamiento, y lo verifiqué de tres formas: pruebas con series escritas a mano (hace 7 días = 34 y media de 28 días = 26.5 para ventas 1 a 40), una prueba que compara el calendario con el de M5 (sábado = 1) y una comparación de `features_de_calendario` contra las columnas reales de la OBT en 1941 fechas, sin diferencias.
 
 **Pega una petición a tu servicio corriendo en el contenedor, y su respuesta:**
 
-_(tu respuesta)_
+Contenedor construido con `docker build -f servicio/Dockerfile -t servicio-demanda .` desde `psets/proyecto/`, y levantado con `docker run -p 8000:8000 servicio-demanda` (yo lo corrí publicando en otro puerto local):
+
+```bash
+curl -X POST localhost:8000/predecir -H "Content-Type: application/json" -d '{"fecha": "2016-05-22", "dept_id": "FOODS_1", "sell_price": 2.24, "is_snap": false, "is_event_day": false, "ventas_recientes": [1, 1, 0, 2, 0, 0, 0, 0, 1, 1, 0, 6, 1, 0, 3, 0, 0, 0, 2, 0, 0, 2, 3, 1, 0, 0, 0, 1, 0, 0]}'
+```
+
+Respuesta: `{"unidades_estimadas":0.99,"version_modelo":"2775572759c4"}` (las ventas reales ese día fueron 0). `GET /salud` respondió `{"estado":"ok","modelo_cargado":true,"version_modelo":"2775572759c4"}`, y un historial de 3 días recibió 422 (`List should have at least 28 items`).
 
 ## Antes de la próxima sesión
 
@@ -138,4 +144,4 @@ _(tu respuesta)_
 
 Tu servicio carga `modelo.joblib`, el archivo que exportaste hoy. Si la semana que viene reentrenas y vuelves a exportar, el archivo se reemplaza. Si mañana un usuario reclama por una predicción de hoy, ¿cómo sabrías qué modelo la produjo? ¿Y cómo volverías al modelo anterior si el nuevo resulta peor?
 
-_(tu respuesta)_
+Habría que registrar con cada predicción la versión del modelo que la produjo (como la huella MD5 del archivo o el `run_id` de MLflow del que se exportó) y guardarla junto con la petición; sin eso, `modelo.joblib` reemplazado no dice nada. Para volver al modelo anterior habría que conservar los archivos de cada versión (o poder volver a exportarlos desde MLflow con su `run_id`) y redesplegar la imagen con esa versión; es más fácil si el servicio carga un modelo con versión explícita en vez de un archivo que se sobrescribe. _(Razonamiento propio; no leí el artículo.)_
