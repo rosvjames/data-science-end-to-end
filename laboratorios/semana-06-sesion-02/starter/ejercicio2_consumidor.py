@@ -16,7 +16,7 @@ UMBRAL = 30.0
 
 def deserializar_evento(datos):
     # TODO 3: mismo criterio que en el Ejercicio 1.
-    return datos
+    return json.loads(datos.decode("utf-8"))
 
 
 consumidor = KafkaConsumer(
@@ -24,6 +24,7 @@ consumidor = KafkaConsumer(
     bootstrap_servers="localhost:9092",
     value_deserializer=deserializar_evento,
     # TODO 2: lee el topico desde el primer evento.
+    auto_offset_reset="earliest",
     consumer_timeout_ms=10000,
 )
 
@@ -39,8 +40,12 @@ for mensaje in consumidor:
     if primera is None:
         primera = lectura
     # TODO 4: suma 1 a las lecturas del sensor de esta lectura.
+    lecturas_por_sensor[lectura["sensor"]] = lecturas_por_sensor.get(lectura["sensor"], 0) + 1
     # TODO 5: si la temperatura pasa de UMBRAL, agrega la lectura a
     # alertas e imprime un aviso con el sensor y la temperatura.
+    if lectura["temperatura"] > UMBRAL:
+        alertas.append(lectura)
+        print(f"ALERTA: {lectura['sensor']} marca {lectura['temperatura']} grados")
 
 consumidor.close()
 print("Lecturas por sensor:", lecturas_por_sensor)

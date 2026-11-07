@@ -29,6 +29,7 @@ for id_pedido in range(1, 11):
         "monto": round(10 + id_pedido * 3.5, 2),
     }
     # TODO 1: publica el evento en el topico pedidos.
+    productor.send("pedidos", value=evento)
     print(f"Evento listo: {evento}")
     time.sleep(0.5)
 

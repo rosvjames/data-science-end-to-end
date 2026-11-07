@@ -32,6 +32,7 @@ lecturas = [
 
 for lectura in lecturas:
     # TODO 1: publica la lectura en el topico lecturas.
+    productor.send("lecturas", value=lectura)
     print(f"Lectura lista: {lectura}")
     time.sleep(0.3)
 

@@ -22,17 +22,17 @@ A partir de la lectura previa:
 
 **Según el artículo, ¿qué gana un sistema al procesar eventos uno por uno o en microlotes, frente a esperar y procesarlos todos juntos?**
 
-_(tu respuesta)_
+Reacciona con baja latencia: cada evento se procesa al llegar (o en micro-lotes muy cortos), en vez de esperar a juntar todos; sirve cuando el valor del dato se pierde rápido. _(general, sin leer el artículo)_
 
 **El artículo advierte que streaming no es gratis: agrega complejidad operativa real. ¿Qué tipo de complejidad menciona, comparado con un job de batch?**
 
-_(tu respuesta)_
+Complejidad operativa: mantener servicios siempre encendidos (broker, procesadores), manejar fallas y reintentos, el orden y la duplicación de eventos, el estado y el monitoreo continuo; un batch corre, termina y se puede repetir. _(general, sin leer el artículo)_
 
 ## Caso de apertura
 
 Un compañero de clase construye un sistema de recomendación de productos y quiere que se actualice apenas un cliente hace clic en algo. Otro construye un modelo que predice el precio de una casa a partir de datos que se publican una vez al mes. ¿Cuál de los dos proyectos se beneficia de procesar los datos en tiempo real, y cuál no gana nada haciéndolo?
 
-_(tu respuesta)_
+El del sistema de recomendación se beneficia de tiempo real: debe reaccionar al clic apenas ocurre. El de la casa no gana nada: sus datos cambian una vez al mes, así que un batch mensual basta.
 
 ## Ejercicio 1: producir y consumir pedidos
 
@@ -46,23 +46,23 @@ python3 ejercicio1_consumidor.py
 
 **Respuesta 1 (TODO 1), antes de ver la solución:** el productor imprimió los 10 eventos y el consumidor no recibió ninguno. ¿Qué le falta al productor?
 
-_(tu respuesta)_
+Le falta publicar: solo armaba y mostraba los eventos. Hay que enviarlos con `productor.send("pedidos", value=evento)`.
 
 **Respuesta 2 (TODO 2):** con el TODO 1 resuelto, el consumidor sigue sin recibir nada si lo corres después del productor, pero sí los recibe si ya estaba corriendo cuando el productor publicó. ¿Por qué?
 
-_(tu respuesta)_
+Sin `auto_offset_reset="earliest"` el consumidor empieza en el final del tópico (`latest`) y solo ve los mensajes que lleguen después de arrancar. Con `earliest` empieza desde el primer evento guardado.
 
 **Respuesta 3 (TODO 3):** ahora el consumidor imprime `b'{"id_pedido": 1, ...}'`. ¿Qué dos pasos de `serializar_evento` tiene que deshacer `deserializar_evento`, y en qué orden?
 
-_(tu respuesta)_
+Dos pasos, en orden inverso: el productor hace `json.dumps` (diccionario a texto) y `.encode("utf-8")` (texto a bytes). El consumidor debe primero `.decode("utf-8")` (bytes a texto) y después `json.loads` (texto a diccionario).
 
 **Respuesta 4 (TODO 4):** si corres el consumidor una segunda vez, ¿vuelve a mostrar los 10 eventos? Y si corres el productor otra vez, ¿el tópico queda con 10 o con 20?
 
-_(tu respuesta)_
+Sí, vuelve a mostrar los 10: sin `group_id` no se guarda el punto donde quedó, y con `earliest` empieza otra vez desde el principio. El tópico queda con 20 si se corre otro productor: Kafka guarda los eventos y no se borran al leerlos; solo se agregan. _(Lo deduje del comportamiento; no repetí las corridas.)_
 
 **Lo que confirmó la salida, TODO por TODO:**
 
-_(anota el resumen final después de cada corrida)_
+Productor: 10 eventos publicados. Consumidor: recibió los 10 y el resumen final fue `{'hogar': 4, 'ropa': 3, 'electronica': 3}`. Lo corrí contra Redpanda en Docker.
 
 ## Durante el ConcepTest
 
@@ -89,15 +89,15 @@ python3 ejercicio2_consumidor.py
 
 **Respuesta 1:** ¿cuántas alertas aparecieron, de qué sensor, y en qué momento las imprimió el consumidor: al final, o a medida que llegaba cada lectura?
 
-_(tu respuesta)_
+2 alertas, las dos del sensor `techo` (31.5 y 33.0 grados). El consumidor las imprime a medida que llega cada lectura, dentro del ciclo, no al final.
 
 **Respuesta 2:** si el productor corriera todo el día enviando una lectura por minuto, ¿en qué cambiaría tu consumidor? ¿Seguiría teniendo sentido `consumer_timeout_ms`?
 
-_(tu respuesta)_
+Sería un consumidor que corre sin parar y procesa cada lectura cuando llega; `consumer_timeout_ms` (que termina el programa tras 10 segundos sin eventos) ya no tendría sentido, porque entre una lectura y otra pasa un minuto y el consumidor se cerraría.
 
 **Si terminas antes:** abre dos terminales y corre el consumidor del Ejercicio 2 en las dos al mismo tiempo, y después el productor. ¿Las dos reciben las 8 lecturas, o se las reparten? Compáralo con tu voto del ConcepTest.
 
-_(tu respuesta)_
+Sin `group_id` (el valor por defecto), cada consumidor es independiente y las dos terminales reciben las 8 lecturas. Si compartieran un `group_id` se repartirían las particiones (y con una sola partición, solo uno recibiría). _(No lo probé con dos terminales; es lo que se deduce de cómo funciona.)_
 
 ## Ejercicio 3: tu propio proyecto, ¿streaming o batch?
 
@@ -107,17 +107,17 @@ Aplica las dos preguntas que decidieron el caso de apertura a tu propio proyecto
 
 ¿La decisión que tu proyecto habilita pierde valor si se toma con datos de hace una hora, un día o una semana? ¿Los datos de tu proyecto llegan de forma continua e impredecible, o en bloques ya definidos?
 
-_(tus respuestas, y tu conclusión: streaming o batch)_
+Si la decisión pierde valor en minutos o si los datos llegan continuos e impredecibles, conviene streaming; si las ventas llegan por bloques diarios y el modelo predice el día siguiente, basta batch. Mi proyecto (M5: ventas diarias de CA_1) es batch: la decisión de reposición se toma una vez al día y los datos se cierran por día. Aun así produje eventos de ventas como ejercicio.
 
 ### Paso 2: escribe tu productor (7 minutos)
 
 Reemplaza el tópico y los eventos de ejemplo por al menos un evento representativo de tu propio proyecto.
 
-_(tu tópico, y los eventos que publicaste)_
+Tópico `ventas_m5`; publiqué 6 eventos de venta (`fecha`, `item_id`, `dept_id`, `units`, `sell_price`, `is_snap`), uno de ellos atípico (15 unidades). Está en `psets/proyecto/procesamiento/productor.py`.
 
 ### Paso 3: escribe tu consumidor y confirma que recibe lo publicado (8 minutos)
 
-_(qué mostró tu consumidor al correrlo)_
+El consumidor recibió los 6 eventos, sumó las unidades por departamento (`{'FOODS_3': 21, 'HOUSEHOLD_1': 1, 'HOBBIES_1': 3, 'FOODS_2': 2}`) y avisó de la venta atípica de `FOODS_3_090` (15 unidades). Lo corrí contra Redpanda en Docker.
 
 ## Al terminar
 
@@ -135,4 +135,4 @@ Ya decidiste si tu proyecto necesita streaming, y produjiste/consumiste tu prime
 
 Pregunta: llevas cuatro semanas construyendo piezas sueltas del pipeline de tu proyecto (contenedor, infraestructura, orquestación, calidad, warehouse, modelado, batch, streaming). ¿Qué falta para que todas esas piezas corran juntas, de principio a fin, sin que tengas que ejecutarlas una por una a mano?
 
-_(tu respuesta)_
+Falta un orquestador que las conecte en un solo flujo con dependencias, horarios, reintentos y alertas (Kestra), con todo en contenedores, y pruebas de integración continua que verifiquen que las piezas funcionan juntas de principio a fin.
